@@ -18,36 +18,23 @@ class ClientController extends Controller
     public function customLogin(Request $request)
     {
 
-      $email = request()->email;
-      $password = request()->password;
+        $request->validate([
+            'email' => 'required',
+            'password' => 'required',
+        ]);
 
-      $hashed_password = Client::where('email', $email)->first()->password;
 
-      $check = Hash::check($password, $hashed_password);
-      $credentials = array('email' => $email , 'password' => $password);
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password, 'Active' => 1])) {
 
-      if (Auth::attempt($credentials)) {
-        dd('ok');
-        return view('index');
-      }
-      dd('not ok');
-
-        return dd($attempt);
-        // $request->validate([
-        //     'email' => 'required',
-        //     'password' => 'required',
-        // ]);
-
-   
-        // $credentials = $request->only('email', 'password');
-
-        // if (Auth::attempt($credentials)) {
-        //     return redirect()->intended('dashboard')
-        //                 ->withSuccess('Signed in');
-        // }
+            return redirect()->intended('dashboard')
+                        ->withSuccess('Signed in');
+        }
   
-        // return redirect("login")->withSuccess('Login details are not valid');
+        return redirect("login")->withSuccess('Login details are not valid or you have no access');
     }
+
+
+
 
     public function registration()
     {
@@ -56,34 +43,31 @@ class ClientController extends Controller
       
     public function customRegistration(Request $request)
     {  
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:clients',
-            'password' => 'required|min:6',
-        ]);
-           
-        $data = $request->all();
-        $check = $this->create($data);
-         
-        return redirect("dashboard")->withSuccess('You have signed-in');
-    }
+        $username = $request->name;
+		$email= $request->email;
+		$address= $request->address;
+		$city= $request->city;
+		$password= $request->password;
+		$notes= $request->notes;
 
-    public function create(array $data)
-    {
-      return Client::create([
-        'name' => $data['name'],
-        'email' => $data['email'],
-        'address' => $data['address'],
-        'city' => $data['city'],
-        'notes' => $data['notes'],
-        'password' => Hash::make($data['password'])
-      ]);
-    }    
-    
+		$encrypted_password = bcrypt($password);
+
+		$users = new Client();
+		$users->name = $username;
+		$users->email = $email;
+		$users->address = $address;
+		$users->city = $city;
+		$users->notes = $notes;
+		$users->password = $encrypted_password;
+
+		$users->save();
+         
+        return redirect("login")->withSuccess('You have signed-in');
+    }
     public function dashboard()
     {
         if(Auth::check()){
-            return view('dashboard');
+            return view('client.dashboard');
         }
   
         return redirect("login")->withSuccess('You are not allowed to access');

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Hash;
 use Session;
 use App\Models\Employee;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
 
@@ -19,55 +20,19 @@ class EmployeeController extends Controller
 
     public function customLogin(Request $request): RedirectResponse
     {
+        $request->validate([
+            'email' => 'required',
+            'password' => 'required',
+        ]);
 
-        // dd($request);
-        // $user = Employee::where('email', $request->email)->first();
 
-        $user = Employee::where([['email', $request->email],["password", $request->password],])->get()->first();
-        
-        if ($user != ''){
-            Auth::login($user);
-            return redirect()->route('dashboard');
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password, 'Active' => 1])) {
 
-        }else{
-            return redirect()->back()->with(['error'=>'Ismingiz tasdiqlanmadi!']);
+            return redirect()->intended('employee.dashboard')
+                        ->withSuccess('Signed in');
         }
-
-        // $user = Employee::where('email', '=', $request['email'])-> where('password' ,'=', Hash::make($request['password']));                                                    
-        // if($user){
-        //     if (Auth::attempt($user)){
-        //         $request->session()->regenerate();
-     
-        //         return redirect()->intended('dashboard');
-        //     }
-        // }
-        // else{
-        //     return redirect()->back();
-        // }
-
-        // $user = Employee::where('email', $request->email)->first();
-        // $hash =  Hash::make($user->password);
-
-
-        // if($user->Active = 1){
-        //     $credentials = $request->validate([
-        //         'email' => ['required', 'email'],
-        //         'password' => ['required'],
-        //     ]);
-     
-        //     if (Auth::attempt($credentials)){
-        //         $request->session()->regenerate();
-     
-        //         return redirect()->intended('dashboard');
-        //     }
-     
-        //     return back()->withErrors([
-        //         'email' => 'The provided credentials do not match our records.',
-        //     ])->onlyInput('email');
-        // }else{
-        //     return redirect("employee-login")->withSuccess('Oppes! You have not to access');
-
-        // }
+  
+        return redirect("login")->withSuccess('Login details are not valid or you have no access');
         
     }
 
@@ -98,9 +63,13 @@ class EmployeeController extends Controller
     
     public function dashboard()
     {
-            return view('dashboard');
+
+        if(Auth::check()){
+            return view('employee.dashboard');
+        }
   
         return redirect("employee-login")->withSuccess('You are not allowed to access');
+        
     }
     
     public function signOut() {
